@@ -1,0 +1,5 @@
+* text=auto eol=lf
+*.png binary
+# 正式 GPX 與 route_data 必須位元組不變（App 會核對 SHA-256）
+public/route.gpx binary
+public/route_data.json binary

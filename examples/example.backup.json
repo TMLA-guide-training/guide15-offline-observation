@@ -1,0 +1,67 @@
+{
+  "schemaVersion": 1,
+  "kind": "guide15-backup",
+  "assessmentId": "guide15-2026-12-13",
+  "deviceId": "SYNTHETIC-EXAMPLE-DEVICE",
+  "exportedAt": "2026-12-13T10:00:00+08:00",
+  "events": [
+    {
+      "schemaVersion": 1,
+      "eventId": "f21e068e-69d9-4a82-8ce7-f0333252bde6",
+      "assessmentId": "guide15-2026-12-13",
+      "routeVersion": "d96b8cf34706833050d37bffc542b9108315acc186b75b71796925687e15c4ac",
+      "participantId": "TEST001",
+      "participantNameSnapshot": "虛構參加者甲",
+      "participantPending": false,
+      "instructorId": "TEST-I1",
+      "instructorNameSnapshot": "虛構教官甲",
+      "category": "positive",
+      "behaviorCode": null,
+      "behaviorCustomLabel": null,
+      "observationText": "【虛構測試 1】在測試集合時協助傳達集合指示，供匯入功能驗證。",
+      "occurredAt": "2026-12-13T10:00:00+08:00",
+      "locationText": "虛構測試地點（不是實際觀察）",
+      "locationWaypointId": null,
+      "gps": null,
+      "routeEstimate": null,
+      "reminded": null,
+      "response": null,
+      "notifiedLead": null,
+      "actionNotes": "",
+      "createdAt": "2026-12-13T10:00:00+08:00",
+      "updatedAt": "2026-12-13T10:00:00+08:00",
+      "deletedAt": null
+    }
+  ],
+  "participants": [
+    {
+      "participantId": "TEST001",
+      "displayName": "虛構參加者甲",
+      "active": true
+    },
+    {
+      "participantId": "TEST002",
+      "displayName": "虛構參加者乙",
+      "active": true
+    }
+  ],
+  "instructors": [
+    {
+      "instructorId": "TEST-I1",
+      "displayName": "虛構教官甲",
+      "isCustom": false
+    }
+  ],
+  "routes": [],
+  "settings": {
+    "key": "main",
+    "deviceId": "SYNTHETIC-EXAMPLE-DEVICE",
+    "assessmentId": "guide15-2026-12-13",
+    "instructorId": "TEST-I1",
+    "routeVersion": "d96b8cf34706833050d37bffc542b9108315acc186b75b71796925687e15c4ac",
+    "accuracyLimitM": 60,
+    "offRouteM": 100,
+    "ambiguityM": 10
+  },
+  "history": []
+}

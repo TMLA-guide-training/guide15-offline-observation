@@ -1,0 +1,234 @@
+{
+  "schema_version": "1.0",
+  "source_gpx": "15期素養體能評測.GPX",
+  "sha256": "d96b8cf34706833050d37bffc542b9108315acc186b75b71796925687e15c4ac",
+  "track_name": "15期素養體能評測",
+  "track_point_count": 821,
+  "waypoint_count": 22,
+  "track_distance_2d_km": 12.512,
+  "has_track_elevation": false,
+  "has_reliable_track_timestamps": false,
+  "route_is_closed_loop": true,
+  "waypoints": [
+    {
+      "id": "WP01",
+      "name": "人形立牌10",
+      "lat": 25.15446424484253,
+      "lon": 121.59077882766724,
+      "nearest_track_distance_m": 2.2,
+      "nearest_track_km": 8.897,
+      "on_track": true,
+      "notes": "距主軌跡30公尺內；里程仍為幾何估計"
+    },
+    {
+      "id": "WP02",
+      "name": "人形立牌11",
+      "lat": 25.13448715209961,
+      "lon": 121.58309698104858,
+      "nearest_track_distance_m": 2.4,
+      "nearest_track_km": 1.145,
+      "on_track": true,
+      "notes": "距主軌跡30公尺內；里程仍為幾何估計"
+    },
+    {
+      "id": "WP03",
+      "name": "人形立牌2",
+      "lat": 25.145065784454346,
+      "lon": 121.57981395721436,
+      "nearest_track_distance_m": 0.0,
+      "nearest_track_km": 2.474,
+      "on_track": true,
+      "notes": "距主軌跡30公尺內；里程仍為幾何估計"
+    },
+    {
+      "id": "WP04",
+      "name": "人形立牌3（內寮公車撤退點）",
+      "lat": 25.144134303554893,
+      "lon": 121.57928891479969,
+      "nearest_track_distance_m": 3.5,
+      "nearest_track_km": 2.605,
+      "on_track": true,
+      "notes": "距主軌跡30公尺內；里程仍為幾何估計"
+    },
+    {
+      "id": "WP05",
+      "name": "人形立牌4",
+      "lat": 25.15068769454956,
+      "lon": 121.57573699951172,
+      "nearest_track_distance_m": 186.0,
+      "nearest_track_km": 3.445,
+      "on_track": false,
+      "notes": "路線外／座標偏移；不得當作主軌跡通過點"
+    },
+    {
+      "id": "WP06",
+      "name": "人形立牌5",
+      "lat": 25.15079121105373,
+      "lon": 121.57766475342214,
+      "nearest_track_distance_m": 0.0,
+      "nearest_track_km": 3.414,
+      "on_track": true,
+      "notes": "距主軌跡30公尺內；里程仍為幾何估計"
+    },
+    {
+      "id": "WP07",
+      "name": "人形立牌6",
+      "lat": 25.154727017506957,
+      "lon": 121.57769115641713,
+      "nearest_track_distance_m": 0.3,
+      "nearest_track_km": 3.898,
+      "on_track": true,
+      "notes": "距主軌跡30公尺內；里程仍為幾何估計"
+    },
+    {
+      "id": "WP08",
+      "name": "人形立牌7",
+      "lat": 25.156723000109196,
+      "lon": 121.57668700441718,
+      "nearest_track_distance_m": 3.4,
+      "nearest_track_km": 4.159,
+      "on_track": true,
+      "notes": "距主軌跡30公尺內；里程仍為幾何估計"
+    },
+    {
+      "id": "WP09",
+      "name": "人形立牌8",
+      "lat": 25.160536766052246,
+      "lon": 121.57494306564331,
+      "nearest_track_distance_m": 0.6,
+      "nearest_track_km": 4.959,
+      "on_track": true,
+      "notes": "距主軌跡30公尺內；里程仍為幾何估計"
+    },
+    {
+      "id": "WP10",
+      "name": "人形立牌9",
+      "lat": 25.16688823699951,
+      "lon": 121.57513618469238,
+      "nearest_track_distance_m": 1.0,
+      "nearest_track_km": 5.749,
+      "on_track": true,
+      "notes": "距主軌跡30公尺內；里程仍為幾何估計"
+    },
+    {
+      "id": "WP11",
+      "name": "內寮(公車撤退點-小19)",
+      "lat": 25.143027305603027,
+      "lon": 121.57841920852661,
+      "nearest_track_distance_m": 154.4,
+      "nearest_track_km": 2.605,
+      "on_track": false,
+      "notes": "路線外／座標偏移；不得當作主軌跡通過點"
+    },
+    {
+      "id": "WP12",
+      "name": "內寮土地公",
+      "lat": 25.152310011908412,
+      "lon": 121.57708195969462,
+      "nearest_track_distance_m": 0.9,
+      "nearest_track_km": 3.599,
+      "on_track": true,
+      "notes": "距主軌跡30公尺內；里程仍為幾何估計"
+    },
+    {
+      "id": "WP13",
+      "name": "午餐備案_陽明山牧場教育解說中心",
+      "lat": 25.162151539698243,
+      "lon": 121.574717592448,
+      "nearest_track_distance_m": 33.9,
+      "nearest_track_km": 5.187,
+      "on_track": false,
+      "notes": "路線外／座標偏移；不得當作主軌跡通過點"
+    },
+    {
+      "id": "WP14",
+      "name": "平等里(公車撤退點-303/小19)",
+      "lat": 25.131354331970215,
+      "lon": 121.57648801803589,
+      "nearest_track_distance_m": 721.2,
+      "nearest_track_km": 1.043,
+      "on_track": false,
+      "notes": "路線外／座標偏移；不得當作主軌跡通過點"
+    },
+    {
+      "id": "WP15",
+      "name": "情人樹",
+      "lat": 25.15363401733339,
+      "lon": 121.57727700658143,
+      "nearest_track_distance_m": 11.1,
+      "nearest_track_km": 3.765,
+      "on_track": true,
+      "notes": "距主軌跡30公尺內；里程仍為幾何估計"
+    },
+    {
+      "id": "WP16",
+      "name": "擎天崗(公車撤退點-小15/108)",
+      "lat": 25.16716718673706,
+      "lon": 121.57391309738159,
+      "nearest_track_distance_m": 124.8,
+      "nearest_track_km": 5.742,
+      "on_track": false,
+      "notes": "路線外／座標偏移；不得當作主軌跡通過點"
+    },
+    {
+      "id": "WP17",
+      "name": "新圳頭山",
+      "lat": 25.13895034790039,
+      "lon": 121.58129453659058,
+      "nearest_track_distance_m": 1.0,
+      "nearest_track_km": 1.737,
+      "on_track": true,
+      "notes": "距主軌跡30公尺內；里程仍為幾何估計"
+    },
+    {
+      "id": "WP18",
+      "name": "清風亭",
+      "lat": 25.134551525115967,
+      "lon": 121.58305406570435,
+      "nearest_track_distance_m": 2.8,
+      "nearest_track_km": 1.15,
+      "on_track": true,
+      "notes": "距主軌跡30公尺內；里程仍為幾何估計"
+    },
+    {
+      "id": "WP19",
+      "name": "溪山溪和宮",
+      "lat": 25.128393173217773,
+      "lon": 121.58674478530884,
+      "nearest_track_distance_m": 0.0,
+      "nearest_track_km": 0.0,
+      "on_track": true,
+      "notes": "距主軌跡30公尺內；里程仍為幾何估計"
+    },
+    {
+      "id": "WP20",
+      "name": "番婆厝",
+      "lat": 25.15449701808393,
+      "lon": 121.57764002680779,
+      "nearest_track_distance_m": 3.6,
+      "nearest_track_km": 3.867,
+      "on_track": true,
+      "notes": "距主軌跡30公尺內；里程仍為幾何估計"
+    },
+    {
+      "id": "WP21",
+      "name": "番婆草原",
+      "lat": 25.158196035772562,
+      "lon": 121.575928023085,
+      "nearest_track_distance_m": 11.2,
+      "nearest_track_km": 4.348,
+      "on_track": true,
+      "notes": "距主軌跡30公尺內；里程仍為幾何估計"
+    },
+    {
+      "id": "WP22",
+      "name": "荷蘭古道東線討論點",
+      "lat": 25.148291224613786,
+      "lon": 121.58857556059957,
+      "nearest_track_distance_m": 3.6,
+      "nearest_track_km": 9.702,
+      "on_track": true,
+      "notes": "距主軌跡30公尺內；里程仍為幾何估計"
+    }
+  ]
+}

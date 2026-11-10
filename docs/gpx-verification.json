@@ -1,0 +1,62 @@
+{
+  "source_file": "15期素養體能評測.GPX",
+  "sha256": "d96b8cf34706833050d37bffc542b9108315acc186b75b71796925687e15c4ac",
+  "track_points": 821,
+  "waypoints": 22,
+  "distance_2d_km": 12.512139152246432,
+  "closed_loop_distance_m": 0.0,
+  "track_ele_count": 0,
+  "track_time_count": 1,
+  "off_route_waypoints_from_supplied_route_data": [
+    {
+      "id": "WP05",
+      "name": "人形立牌4",
+      "lat": 25.15068769454956,
+      "lon": 121.57573699951172,
+      "nearest_track_distance_m": 186.0,
+      "nearest_track_km": 3.445,
+      "on_track": false,
+      "notes": "路線外／座標偏移；不得當作主軌跡通過點"
+    },
+    {
+      "id": "WP11",
+      "name": "內寮(公車撤退點-小19)",
+      "lat": 25.143027305603027,
+      "lon": 121.57841920852661,
+      "nearest_track_distance_m": 154.4,
+      "nearest_track_km": 2.605,
+      "on_track": false,
+      "notes": "路線外／座標偏移；不得當作主軌跡通過點"
+    },
+    {
+      "id": "WP13",
+      "name": "午餐備案_陽明山牧場教育解說中心",
+      "lat": 25.162151539698243,
+      "lon": 121.574717592448,
+      "nearest_track_distance_m": 33.9,
+      "nearest_track_km": 5.187,
+      "on_track": false,
+      "notes": "路線外／座標偏移；不得當作主軌跡通過點"
+    },
+    {
+      "id": "WP14",
+      "name": "平等里(公車撤退點-303/小19)",
+      "lat": 25.131354331970215,
+      "lon": 121.57648801803589,
+      "nearest_track_distance_m": 721.2,
+      "nearest_track_km": 1.043,
+      "on_track": false,
+      "notes": "路線外／座標偏移；不得當作主軌跡通過點"
+    },
+    {
+      "id": "WP16",
+      "name": "擎天崗(公車撤退點-小15/108)",
+      "lat": 25.16716718673706,
+      "lon": 121.57391309738159,
+      "nearest_track_distance_m": 124.8,
+      "nearest_track_km": 5.742,
+      "on_track": false,
+      "notes": "路線外／座標偏移；不得當作主軌跡通過點"
+    }
+  ]
+}
