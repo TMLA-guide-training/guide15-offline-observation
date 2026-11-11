@@ -1,6 +1,6 @@
 import { describe,it,expect } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { parseGPX, distance, matchRoute, validateEvent, parseCSV, parseRoster, exportCSV, localISO, planMerge, stable } from '../src/core';
+import { parseGPX, distance, matchRoute, validateEvent, parseCSV, parseRoster, exportCSV, localISO, planMerge, stable, decodeText, menuWaypoints } from '../src/core';
 import { readBackup, anonymousExport } from '../src/backup';
 import { ASSESSMENT, type EventRecord } from '../src/types';
 import { event } from './fixture';
@@ -22,4 +22,6 @@ describe('CSV、名單與匿名資料',()=>{
  it('名單預覽攔截缺失／重複欄位，支援 JSON、BOM',()=>{expect(parseRoster('\uFEFFparticipant_id,name\r\nP1,王一\r\nP1,王二\r\nP2,','participant').errors).toHaveLength(2);expect(parseRoster('[{"instructor_id":"I1","name":"測試"}]','instructor').valid).toHaveLength(1);expect(()=>parseRoster('name\n姓名','participant')).toThrow();expect(()=>parseCSV('"broken')).toThrow();});
  it('匿名討論版不含姓名、自由文字、GPS、裝置，不能作還原備份',async()=>{const a=anonymousExport([event()]),s=JSON.stringify(a);expect(s).not.toContain('虛構測試');expect(s).not.toContain('主動協助');expect(s).not.toContain('gps');await expect(readBackup(s)).rejects.toThrow();});
  it('完整備份驗證原始 GPX SHA 與幾何',async()=>{const route=await parseGPX(raw,'正式.GPX');const b={schemaVersion:1,kind:'guide15-backup',assessmentId:ASSESSMENT,deviceId:'test-device',exportedAt:localISO(),events:[event()],participants:[],instructors:[],routes:[route],settings:{},history:[]};expect((await readBackup(JSON.stringify(b))).routes).toHaveLength(1);await expect(readBackup(JSON.stringify({...b,routes:[{...route,sha256:'tampered'}]}))).rejects.toThrow('雜湊');});
+ it('名單接受中文欄位名稱與 Big5／UTF-8 編碼',()=>{expect(parseRoster('編號,姓名\nA01,王小明','participant').valid).toEqual([{id:'A01',name:'王小明'}]);const utf8=new TextEncoder().encode('\uFEFFparticipant_id,name\nA01,王小明').buffer;expect(parseRoster(decodeText(utf8),'participant').valid[0].name).toBe('王小明');const big5=new Uint8Array([0x41,0x30,0x31,0x2c,0xa4,0xfd,0xa4,0x70,0xa9,0xfa]).buffer;expect(decodeText(big5)).toBe('A01,王小明');});
+ it('地標選單排除人形立牌與平等里',async()=>{const route=await parseGPX(raw,'正式.GPX');const menu=menuWaypoints(route.waypoints);expect(route.waypoints).toHaveLength(22);expect(menu).toHaveLength(11);expect(menu.every(w=>!w.name.startsWith('人形立牌')&&!w.name.startsWith('平等里'))).toBe(true);});
 });
