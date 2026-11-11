@@ -21,7 +21,7 @@ export async function uploadBackup(url: string, token: string, backup: Backup, i
   let res: Response;
   // 不設 Content-Type（預設 text/plain），屬於簡單請求，Apps Script 不需處理 CORS 預檢。
   try { res = await fetch(url, { method: 'POST', body: JSON.stringify({ token, instructor: instructorName, backup }), redirect: 'follow' }); }
-  catch { throw new UploadError('network', '無法連線，連網後會自動重試'); }
+  catch { throw new UploadError('network', navigator.onLine ? '無法連到雲端上傳服務，稍後會自動重試' : '目前沒有網路，連網後會自動上傳'); }
   let out: { ok?: boolean; name?: string; error?: string };
   try { out = await res.json(); } catch { throw new UploadError('server', `雲端回應異常（HTTP ${res.status}）`); }
   if (out.ok && out.name) return out.name;
