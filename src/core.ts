@@ -7,7 +7,7 @@ const hasOffset=(v:unknown)=>typeof v==='string'&&/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d
 export function validateEvent(value:unknown):string[] {const e=value as EventRecord, errors:string[]=[];if(!e||typeof e!=='object')return ['事件不是物件'];
  if(e.schemaVersion!==1)errors.push('不支援事件版本');
  if(!/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(e.eventId))errors.push('eventId 必須為 UUIDv4');
- for(const k of ['assessmentId','routeVersion','participantId','instructorId','instructorNameSnapshot','observationText','locationText'] as const)if(typeof e[k]!=='string'||!e[k].trim())errors.push(`${k} 必填`);
+ for(const k of ['assessmentId','routeVersion','participantId','instructorId','instructorNameSnapshot','observationText'] as const)if(typeof e[k]!=='string'||!e[k].trim())errors.push(`${k} 必填`);if(typeof e.locationText!=='string')errors.push('locationText 格式錯誤');
  for(const k of ['participantNameSnapshot','actionNotes'] as const)if(typeof e[k]!=='string')errors.push(`${k} 格式錯誤`);
  if(e.participantPending!==undefined&&typeof e.participantPending!=='boolean')errors.push('待核對格式錯誤');
  if(!['positive','improve','safety'].includes(e.category))errors.push('事件類別錯誤');
@@ -29,7 +29,7 @@ const LABEL={reminded:{yes:'已提醒',no:'未提醒',unknown:'尚未記錄'},re
 const csvTime=(iso:string|null)=>iso?iso.slice(0,16).replace('T',' '):'';
 export function exportCSV(events:EventRecord[]):string {
  const cols:[string,(e:EventRecord)=>unknown][]=[['參加者編號',e=>e.participantId],['姓名',e=>e.participantNameSnapshot],['待核對編號',e=>e.participantPending?'是':''],['類別',e=>CATEGORY_LABEL[e.category]],
-  ['安全項目',e=>e.behaviorCode?(e.behaviorCode==='S99'?e.behaviorCustomLabel||SAFETY.S99:`${e.behaviorCode} ${SAFETY[e.behaviorCode]}`):''],['具體事實',e=>e.observationText],['事件時間',e=>csvTime(e.occurredAt)],['地點',e=>e.locationText],
+  ['安全項目',e=>e.behaviorCode?(e.behaviorCode==='S99'?e.behaviorCustomLabel||SAFETY.S99:`${e.behaviorCode} ${SAFETY[e.behaviorCode]}`):''],['具體事實',e=>e.observationText],['事件時間',e=>csvTime(e.occurredAt)],['地點',e=>e.locationText.trim()||'未填地點'],
   ['是否已提醒',e=>e.reminded?LABEL.reminded[e.reminded]:''],['提醒後反應',e=>e.response?LABEL.response[e.response]:''],['是否已通知總教官',e=>e.notifiedLead?LABEL.notifiedLead[e.notifiedLead]:''],['處置說明',e=>e.actionNotes],['紀錄教官',e=>e.instructorNameSnapshot],
   ['GPS',e=>e.gps?`${e.gps.lat.toFixed(6)}, ${e.gps.lon.toFixed(6)}（±${Math.round(e.gps.accuracyM)} m）`:''],['路線推測',e=>e.routeEstimate?`約 ${e.routeEstimate.kmFromStart.toFixed(1)} km，偏離 ${Math.round(e.routeEstimate.crossTrackDistanceM)} m`:''],
   ['建立時間',e=>csvTime(e.createdAt)],['最後修改',e=>csvTime(e.updatedAt)],['活動識別碼',e=>e.assessmentId],['事件 ID',e=>e.eventId]];
