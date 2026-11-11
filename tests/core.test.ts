@@ -17,11 +17,22 @@ describe('事件資料規則及合併',()=>{
  it('同一匯入檔內重複及衝突也檢查',()=>{const a=event();const p=planMerge([],[a,{...a},{...a,deletedAt:a.updatedAt}]);expect(p.added).toHaveLength(1);expect(p.skipped).toHaveLength(1);expect(p.conflicts).toHaveLength(1);});
 });
 describe('CSV、名單與匿名資料',()=>{
- it('BOM／繁中／逗號、引號及換行往返不破損',()=>{const text='繁體中文,"引號"\n下一行';const csv=exportCSV([event({observationText:text})]);expect(csv.charCodeAt(0)).toBe(0xFEFF);const rows=parseCSV(csv);expect(rows[1][rows[0].indexOf('observationText')]).toBe(text);});
- it('公式、前導空白、Tab 等不執行公式',()=>{for(const v of ['=1+1','+SUM(1,2)','-1+2','@SUM(A1)','  =1','\t=1','\r=1']){const rows=parseCSV(exportCSV([event({observationText:v})]));expect(rows[1][rows[0].indexOf('observationText')]).toBe("'"+v);}});
+ it('BOM／繁中／逗號、引號及換行往返不破損',()=>{const text='繁體中文,"引號"\n下一行';const csv=exportCSV([event({observationText:text})]);expect(csv.charCodeAt(0)).toBe(0xFEFF);const rows=parseCSV(csv);expect(rows[1][rows[0].indexOf('具體事實')]).toBe(text);});
+ it('公式、前導空白、Tab 等不執行公式',()=>{for(const v of ['=1+1','+SUM(1,2)','-1+2','@SUM(A1)','  =1','\t=1','\r=1']){const rows=parseCSV(exportCSV([event({observationText:v})]));expect(rows[1][rows[0].indexOf('具體事實')]).toBe("'"+v);}});
  it('名單預覽攔截缺失／重複欄位，支援 JSON、BOM',()=>{expect(parseRoster('\uFEFFparticipant_id,name\r\nP1,王一\r\nP1,王二\r\nP2,','participant').errors).toHaveLength(2);expect(parseRoster('[{"instructor_id":"I1","name":"測試"}]','instructor').valid).toHaveLength(1);expect(()=>parseRoster('name\n姓名','participant')).toThrow();expect(()=>parseCSV('"broken')).toThrow();});
  it('匿名討論版不含姓名、自由文字、GPS、裝置，不能作還原備份',async()=>{const a=anonymousExport([event()]),s=JSON.stringify(a);expect(s).not.toContain('虛構測試');expect(s).not.toContain('主動協助');expect(s).not.toContain('gps');await expect(readBackup(s)).rejects.toThrow();});
  it('完整備份驗證原始 GPX SHA 與幾何',async()=>{const route=await parseGPX(raw,'正式.GPX');const b={schemaVersion:1,kind:'guide15-backup',assessmentId:ASSESSMENT,deviceId:'test-device',exportedAt:localISO(),events:[event()],participants:[],instructors:[],routes:[route],settings:{},history:[]};expect((await readBackup(JSON.stringify(b))).routes).toHaveLength(1);await expect(readBackup(JSON.stringify({...b,routes:[{...route,sha256:'tampered'}]}))).rejects.toThrow('雜湊');});
  it('名單接受中文欄位名稱與 Big5／UTF-8 編碼',()=>{expect(parseRoster('編號,姓名\nA01,王小明','participant').valid).toEqual([{id:'A01',name:'王小明'}]);const utf8=new TextEncoder().encode('\uFEFFparticipant_id,name\nA01,王小明').buffer;expect(parseRoster(decodeText(utf8),'participant').valid[0].name).toBe('王小明');const big5=new Uint8Array([0x41,0x30,0x31,0x2c,0xa4,0xfd,0xa4,0x70,0xa9,0xfa]).buffer;expect(decodeText(big5)).toBe('A01,王小明');});
  it('地標選單排除人形立牌與平等里',async()=>{const route=await parseGPX(raw,'正式.GPX');const menu=menuWaypoints(route.waypoints);expect(route.waypoints).toHaveLength(22);expect(menu).toHaveLength(11);expect(menu.every(w=>!w.name.startsWith('人形立牌')&&!w.name.startsWith('平等里'))).toBe(true);});
+});
+describe('事件 CSV（Excel 閱讀用）',()=>{
+ it('中文欄位與選項、依編號再依時間排序、不含已刪除事件',()=>{const rows=parseCSV(exportCSV([
+  event({participantId:'A10',occurredAt:'2026-12-13T09:00:00+08:00',category:'safety',behaviorCode:'S02',reminded:'yes',response:'corrected',notifiedLead:'yes',gps:{lat:25.0123456,lon:121.5,accuracyM:12.4,capturedAt:'2026-12-13T09:00:00+08:00'},routeEstimate:{kmFromStart:3.24,crossTrackDistanceM:18.6,confidence:'approximate'}}),
+  event({participantId:'A2',occurredAt:'2026-12-13T11:00:00+08:00'}),event({participantId:'A2',occurredAt:'2026-12-13T08:30:00+08:00',observationText:'較早'}),
+  event({participantId:'A1',deletedAt:'2026-12-13T12:00:00+08:00'}),event({participantId:'A3',category:'safety',behaviorCode:'S99',behaviorCustomLabel:'自訂狀況'})]));
+  const h=rows[0],col=(r:string[],name:string)=>r[h.indexOf(name)];
+  expect(h.slice(0,4)).toEqual(['參加者編號','姓名','待核對編號','類別']);expect(h).toContain('是否已通知總教官');expect(h).not.toContain('observationText');
+  expect(rows.slice(1).map(r=>r[0])).toEqual(['A2','A2','A3','A10']);expect(col(rows[1],'具體事實')).toBe('較早');expect(col(rows[1],'事件時間')).toBe('2026-12-13 08:30');
+  const s=rows[4];expect(col(s,'類別')).toBe('安全／規則事件');expect(col(s,'安全項目')).toBe('S02 未告知嚮導自行離開隊伍');expect(col(s,'是否已提醒')).toBe('已提醒');expect(col(s,'提醒後反應')).toBe('已改正');expect(col(s,'是否已通知總教官')).toBe('已通知');expect(col(s,'GPS')).toBe('25.012346, 121.500000（±12 m）');expect(col(s,'路線推測')).toBe('約 3.2 km，偏離 19 m');
+  expect(col(rows[3],'安全項目')).toBe('自訂狀況');expect(col(rows[1],'類別')).toBe('正向表現');expect(col(rows[1],'是否已提醒')).toBe('');});
 });

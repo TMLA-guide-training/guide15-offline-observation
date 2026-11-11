@@ -9,3 +9,4 @@
 .setup .done{color:#244b3b;font-weight:600}
 .version{opacity:.75}
 #updateBanner{margin:8px 16px 0}
+.pills{display:flex;gap:6px;align-items:center}.pill.waiting{background:#fff3dc;border-color:#e7d5ac;color:#82602e}

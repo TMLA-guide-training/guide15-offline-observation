@@ -18,15 +18,26 @@ function doPost(e) {
     const b = req.backup;
     if (!b || b.kind !== 'guide15-backup' || b.schemaVersion !== 1 || !Array.isArray(b.events) || typeof b.deviceId !== 'string') return out({ ok: false, error: 'invalid' });
     const safe = s => String(s || '').replace(/[^\p{L}\p{N}_-]/gu, '_').slice(0, 40) || '未填';
-    const when = String(b.exportedAt || '').slice(0, 16).replace('T', '_').replace(':', '');
-    const name = `備份_${safe(req.instructor)}_${safe(when)}_${safe(b.deviceId).slice(0, 8)}.json`;
-    folder().createFile(name, JSON.stringify(b, null, 2), 'application/json');
+    // 每支手機只保留一份最新備份（以裝置碼辨識），覆寫時雲端硬碟會保留版本紀錄。
+    const device = safe(b.deviceId).slice(0, 8), name = `備份_${safe(req.instructor)}_${device}.json`, json = JSON.stringify(b, null, 2);
+    const lock = LockService.getScriptLock(); lock.waitLock(20000);
+    try {
+      const dir = folder(), existing = deviceFile(dir, device);
+      if (existing) { existing.setContent(json); if (existing.getName() !== name) existing.setName(name); }
+      else dir.createFile(name, json, 'application/json');
+    } finally { lock.releaseLock(); }
     return out({ ok: true, name });
   } catch (err) {
     return out({ ok: false, error: err instanceof SyntaxError ? 'invalid' : 'server' });
   }
 }
-// 總教官一鍵合併：回傳每台裝置最新的一份備份（依檔名結尾的裝置碼分組、取最新建立者）。
+function deviceFile(dir, device) {
+  let best = null;
+  const it = dir.getFiles();
+  while (it.hasNext()) { const f = it.next(); if (f.getName().endsWith(`_${device}.json`) && (!best || f.getLastUpdated() > best.getLastUpdated())) best = f; }
+  return best;
+}
+// 總教官一鍵合併：回傳每台裝置最新的一份備份（依檔名結尾的裝置碼分組、取最後更新者）。
 function listBackups(req) {
   const lead = PropertiesService.getScriptProperties().getProperty('LEAD_TOKEN');
   if (!lead || typeof req.token !== 'string' || req.token !== lead) return out({ ok: false, error: 'auth' });
@@ -36,7 +47,7 @@ function listBackups(req) {
     const f = it.next(), name = f.getName();
     if (!/\.json$/i.test(name)) continue;
     total++;
-    const m = name.match(/_([^_]+)\.json$/i), device = m ? m[1] : name, created = f.getDateCreated().getTime();
+    const m = name.match(/_([^_]+)\.json$/i), device = m ? m[1] : name, created = f.getLastUpdated().getTime();
     if (!latest[device] || created > latest[device].created) latest[device] = { file: f, created };
   }
   const files = Object.keys(latest).map(k => ({ name: latest[k].file.getName(), content: latest[k].file.getBlob().getDataAsString('UTF-8') }));

@@ -15,7 +15,10 @@ export async function leadTokenFor(password: string) {
 }
 export const uploadState = {
   token: () => get(TOKEN_KEY), setToken: (t: string | null) => set(TOKEN_KEY, t),
-  pending: () => get(PENDING_KEY) === '1', setPending: (p: boolean) => set(PENDING_KEY, p ? '1' : null),
+  // 待上傳標記存「最後一次變更」的時間；上傳期間若又有變更，標記會不同，完成後不清除並再傳一次。
+  pending: () => !!get(PENDING_KEY), pendingMark: () => get(PENDING_KEY),
+  markPending: () => set(PENDING_KEY, `${Date.now()}-${Math.random()}`), setPending: (p: boolean) => set(PENDING_KEY, p ? `${Date.now()}-${Math.random()}` : null),
+  clearPendingIf: (mark: string | null) => { if (get(PENDING_KEY) === mark) set(PENDING_KEY, null); },
   last: (): { at: string; name: string } | null => { try { return JSON.parse(get(LAST_KEY) ?? 'null'); } catch { return null; } },
   setLast: (v: { at: string; name: string }) => set(LAST_KEY, JSON.stringify(v)),
   clear: () => { for (const k of [TOKEN_KEY, PENDING_KEY, LAST_KEY]) set(k, null); },
