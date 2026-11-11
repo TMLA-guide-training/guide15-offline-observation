@@ -38,13 +38,16 @@
 16. **「教官備份上傳」資料夾沿用上層分享（使用者決定）**：教官（上層資料夾編輯者）可在雲端硬碟直接看到彼此的備份；總教官密碼只限制 App 內的一鍵合併。不要擅自改資料夾權限。
 17. **V1.6**：儲存／刪除事件後自動背景上傳（`afterEventChange`、`syncUpload`，待上傳標記為變更戳記，上傳中有新變更會再傳）；頂端「☁ 已同步／N 筆待上傳」；雲端每支手機一份檔（Apps Script 依裝置碼覆寫）；合併衝突可一鍵「全部採用最後修改的版本」；啟動時自動請求永久儲存；事件 CSV 改為中文欄位與選項、依編號→時間排序、不含已刪除事件。
 18. **文字地點選填**（V1.7）：`validateEvent` 只要求字串型別；地點與 GPS 皆空時表單顯示提醒（不阻擋），清單與 CSV 顯示「未填地點」。
+19. **App 內使用說明**（V1.8）：`src/help.ts`，選單「？ 使用說明」及首次設定頁下方摺疊區。內容須與 `docs/instructor.md` 同步；改功能時兩邊一起更新。
 
 ## 程式結構
 
 - `src/main.ts`：全部 UI（字串模板 render）、首次設定、版本更新。
 - `src/core.ts`：GPX 解析、GPS 路段推測、CSV／名單解析、合併計畫、CSV 匯出。
 - `src/db.ts`：IndexedDB（`guide15-observation`，version 2）。修改 schema 必須是 additive migration，不可刪除既有事件。
-- `src/backup.ts`：JSON 備份驗證與匿名匯出。
+- `src/backup.ts`：JSON 備份驗證、多份合併（`combineBackups`）與匿名匯出。
+- `src/help.ts`：App 內使用說明頁。
+- `src/upload.ts`、`src/upload-config.ts`：雲端備份上傳與總教官讀取；`src/rosterCrypto.ts`：名單加解密。
 - `scripts/build-sw.mjs`：build 後依內容雜湊產生 `dist/sw.js`（預快取全部資產）。
 - `tests/`：Vitest + jsdom + fake-indexeddb。改功能時同步更新／新增測試；`npm test` 必須全過。
 

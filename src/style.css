@@ -10,3 +10,4 @@
 .version{opacity:.75}
 #updateBanner{margin:8px 16px 0}
 .pills{display:flex;gap:6px;align-items:center}.pill.waiting{background:#fff3dc;border-color:#e7d5ac;color:#82602e}
+.help{padding:8px 24px}.helpsec{margin:0;border-bottom:1px solid #e9ede5}.helpsec:last-child{border-bottom:0}.helpsec summary{font-weight:650;font-size:15px;padding:14px 0;min-height:48px}.helpbody{font-size:14px;line-height:1.8;padding-bottom:12px}.helpbody ol,.helpbody ul{padding-left:22px;margin:6px 0}.helpbody li{margin:4px 0}.faq dt{font-weight:650;margin-top:12px}.faq dd{margin:2px 0 0}@media(max-width:700px){.help{padding:4px 16px}}
