@@ -1,4 +1,4 @@
-// 雲端備份：把完整 JSON 備份 POST 到 Apps Script，存進主課的 Google 雲端資料夾。
+// 雲端備份：把完整 JSON 備份 POST 到 Apps Script，存進總教官的 Google 雲端資料夾。
 // 通行碼＝SHA-256("guide15-upload:"+名單密碼)，只存在本機 localStorage（不進 JSON 備份）。
 // 離線時只記下「待上傳」，連網後重新產生最新備份再上傳。
 import type { Backup } from './types';
@@ -33,7 +33,7 @@ export async function uploadBackup(url: string, token: string, backup: Backup, i
   if (out.error === 'invalid' || out.error === 'too_large') throw new UploadError('invalid', '雲端拒絕此備份檔（格式或大小不符）');
   throw new UploadError('server', '雲端暫時無法儲存，稍後會自動重試');
 }
-// 主課一鍵合併：以主課通行碼向 Apps Script 取回「教官備份上傳」資料夾的備份（每台裝置最新一份）。
+// 總教官一鍵合併：以總教官通行碼向 Apps Script 取回「教官備份上傳」資料夾的備份（每台裝置最新一份）。
 export async function fetchCloudBackups(url: string, leadToken: string): Promise<{ total: number; files: { name: string; content: string }[] }> {
   let res: Response;
   try { res = await fetch(url, { method: 'POST', body: JSON.stringify({ action: 'list', token: leadToken }), redirect: 'follow' }); }
@@ -41,6 +41,6 @@ export async function fetchCloudBackups(url: string, leadToken: string): Promise
   let out: { ok?: boolean; total?: number; files?: { name: string; content: string }[]; error?: string };
   try { out = await res.json(); } catch { throw new UploadError('server', `雲端回應異常（HTTP ${res.status}）`); }
   if (out.ok && Array.isArray(out.files)) return { total: out.total ?? out.files.length, files: out.files };
-  if (out.error === 'auth') throw new UploadError('auth', '主課密碼錯誤');
+  if (out.error === 'auth') throw new UploadError('auth', '總教官密碼錯誤');
   throw new UploadError('server', '雲端暫時無法讀取備份，請稍後再試');
 }

@@ -2,7 +2,7 @@
 // 設定步驟見 docs/cloud-backup.md。
 // 部署：執行身分＝我（資料夾擁有者），存取權＝任何人。
 // 指令碼屬性 UPLOAD_TOKEN＝教官上傳通行碼（SHA-256("guide15-upload:"+名單密碼) 的 16 進位）。
-// 指令碼屬性 LEAD_TOKEN＝主課讀取通行碼（SHA-256("guide15-lead:"+主課密碼) 的 16 進位），用於一鍵合併。
+// 指令碼屬性 LEAD_TOKEN＝總教官讀取通行碼（SHA-256("guide15-lead:"+總教官密碼) 的 16 進位），用於一鍵合併。
 const FOLDER_ID = '1qIGi1x7QULrHG33wcs_Vh5bB_rkHROjL'; // 雲端資料夾「04_評測紀錄APP」
 const SUBFOLDER = '教官備份上傳';
 const MAX_BYTES = 20 * 1024 * 1024;
@@ -26,7 +26,7 @@ function doPost(e) {
     return out({ ok: false, error: err instanceof SyntaxError ? 'invalid' : 'server' });
   }
 }
-// 主課一鍵合併：回傳每台裝置最新的一份備份（依檔名結尾的裝置碼分組、取最新建立者）。
+// 總教官一鍵合併：回傳每台裝置最新的一份備份（依檔名結尾的裝置碼分組、取最新建立者）。
 function listBackups(req) {
   const lead = PropertiesService.getScriptProperties().getProperty('LEAD_TOKEN');
   if (!lead || typeof req.token !== 'string' || req.token !== lead) return out({ ok: false, error: 'auth' });

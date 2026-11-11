@@ -19,20 +19,22 @@
 
 ## 已確定的設計決定（修改前請先確認使用者同意）
 
-1. **名單絕不 commit 進 repo**：repo 與網站都是公開的。正式參加者名單由主課私下（LINE）傳給教官，在 App 內匯入。`examples/` 只放虛構資料。
-   - **內建加密名單（V1.2 起，使用者同意）**：名單以密碼加密（AES-256-GCM、PBKDF2-SHA256 600000 次，`src/rosterCrypto.ts`），加密後的 JSON 存在 GitHub Secret `ROSTER_ENC`，build 時由 `scripts/write-roster.mjs` 寫成 `dist/roster.enc.json`。repo 與 git 歷史都沒有名單。教官在首次設定輸入主課給的密碼即可載入；檔案匯入仍保留。加密檔在網站上是公開的，密碼須 16 字以上隨機。操作步驟見 `docs/roster-secret.md`。評測結束後刪除 Secret 並重新部署。
+1. **名單絕不 commit 進 repo**：repo 與網站都是公開的。正式參加者名單由總教官私下（LINE）傳給教官，在 App 內匯入。`examples/` 只放虛構資料。
+   - **內建加密名單（V1.2 起，使用者同意）**：名單以密碼加密（AES-256-GCM、PBKDF2-SHA256 600000 次，`src/rosterCrypto.ts`），加密後的 JSON 存在 GitHub Secret `ROSTER_ENC`，build 時由 `scripts/write-roster.mjs` 寫成 `dist/roster.enc.json`。repo 與 git 歷史都沒有名單。教官在首次設定輸入總教官給的密碼即可載入；檔案匯入仍保留。加密檔在網站上是公開的，密碼須 16 字以上隨機。操作步驟見 `docs/roster-secret.md`。評測結束後刪除 Secret 並重新部署。
 2. **首次開啟強制設定**：必須先輸入教官姓名、匯入參加者名單才能使用（`needsSetup()`／`renderSetup()`）；完成後不再要求。
 3. **教官自行輸入姓名**，不建教官名單。改名只更新同一個 instructorId 的 displayName，已存事件保留姓名快照。
 4. **名單格式**：CSV 第一列 `participant_id,name`（也接受 `編號,姓名`），UTF-8／BOM 或 Big5 皆可（`decodeText`、`parseRoster` in `src/core.ts`）；或 JSON 陣列。
-5. **事件地標選單**：全部原始地標與路線外參考點，但排除名稱以「人形立牌」「平等里」開頭者（`MENU_EXCLUDE` in `src/core.ts`），目前 11 個。不需主課勾選核定。
-6. **沒有「路線資料」頁**：GPX 另由主課在 LINE 提供。App 仍內建 `public/route.gpx` 做 GPS 位置推測。
+5. **事件地標選單**：全部原始地標與路線外參考點，但排除名稱以「人形立牌」「平等里」開頭者（`MENU_EXCLUDE` in `src/core.ts`），目前 11 個。不需總教官勾選核定。
+6. **沒有「路線資料」頁**：GPX 另由總教官在 LINE 提供。App 仍內建 `public/route.gpx` 做 GPS 位置推測。
 7. **`public/route.gpx`、`public/route_data.json` 位元組不可修改**：App 啟動時核對 SHA-256（`d96b8cf3…5c4ac`）、點數與距離；`.gitattributes` 設為 binary 防止換行轉換。換路線須兩檔一起換並重新核對。
 8. **自動更新**：App 啟動、回到前景、恢復連網、每 30 分鐘檢查新版 service worker；沒有未儲存表單／匯入預覽時自動 `SKIP_WAITING` 並重新載入，否則顯示提示，儲存後才更新。設定頁有「檢查更新」按鈕。**絕不在教官填表時強制重新載入。**
 9. 主畫面名稱「15期評測紀錄」（`public/manifest.webmanifest` 的 name/short_name 與 `index.html` 的 `apple-mobile-web-app-title`）。
 10. 已移除「安裝與開發交付檔案（連網下載）」區塊；`scripts/package-delivery.py` 已不需要。
-11. **備份頁以完整 JSON 為主**（V1.2.1）：事件 CSV 與匿名討論版收在摺疊的「主課整理用」。
+11. **備份頁以完整 JSON 為主**（V1.2.1）：事件 CSV 與匿名討論版收在摺疊的「總教官整理用」。
 12. **雲端備份上傳**（V1.3）：按「完整 JSON 備份（上傳雲端）」時只 POST 到 Google Apps Script（不下載，避免 iOS 跳出預覽；另有「另存到手機」按鈕）（`src/upload.ts`、`src/upload-config.ts`、`scripts/apps-script/Code.gs`），存進雲端資料夾「04_評測紀錄APP / 教官備份上傳」。離線時提醒並標記待上傳，連網後自動補傳。通行碼由名單密碼推導，只存在 localStorage。設定見 `docs/cloud-backup.md`。
-13. **主課一鍵合併**（V1.4）：主課密碼（`LEAD_TOKEN`，與名單密碼分開）向 Apps Script 取回每台裝置最新一份備份，`combineBackups`（`src/backup.ts`）合併成一次預覽後沿用原本的合併流程。檔案匯入也可一次多選。
+13. **總教官一鍵合併**（V1.4）：總教官密碼（`LEAD_TOKEN`，與名單密碼分開）向 Apps Script 取回每台裝置最新一份備份，`combineBackups`（`src/backup.ts`）合併成一次預覽後沿用原本的合併流程。檔案匯入也可一次多選。
+14. **稱謂一律用「總教官」**（V1.5，原「主課」）。程式內部識別名稱（`LEAD_TOKEN`、`notifiedLead`、`leadTokenFor`）不改。
+15. **「是否已通知總教官」只用於安全事件**（V1.5）：待改善不顯示，儲存為 `notifiedLead: null`（未記錄）；舊資料不改寫。
 
 ## 程式結構
 
