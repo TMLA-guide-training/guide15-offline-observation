@@ -1,0 +1,34 @@
+import { describe,it,expect,beforeEach,afterEach,vi } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { IDBFactory } from 'fake-indexeddb';
+import { combineBackups } from '../src/backup';
+import { parseGPX } from '../src/core';
+import { openDB,putMany,all } from '../src/db';
+import { leadTokenFor } from '../src/upload';
+import type { Backup, EventRecord, Route } from '../src/types';
+import { event } from './fixture';
+vi.mock('../src/upload-config',()=>({UPLOAD_URL:'https://script.test/exec'}));
+const mk=(deviceId:string,exportedAt:string,events:EventRecord[],routes:Route[]=[]):Backup=>({schemaVersion:1,kind:'guide15-backup',assessmentId:events[0]?.assessmentId??'a',deviceId,exportedAt,events,participants:[{participantId:'TEST001',displayName:'虛構甲',active:true}],instructors:[],routes,settings:{} as Backup['settings'],history:[]});
+describe('combineBackups',()=>{
+ it('每台裝置取最新一份；同事件取 updatedAt 較新者；名單去重',()=>{const e1=event({updatedAt:'2026-12-13T10:01:00+08:00'}),e1new={...e1,observationText:'較新',updatedAt:'2026-12-13T11:00:00+08:00'},e2=event(),e3=event();
+  const r=combineBackups([{name:'A舊.json',backup:mk('devA','2026-12-13T10:00:00+08:00',[e1,e3])},{name:'A新.json',backup:mk('devA','2026-12-13T12:00:00+08:00',[e1new])},{name:'B.json',backup:mk('devB','2026-12-13T09:00:00+08:00',[e2,{...e1,updatedAt:'2026-12-13T10:30:00+08:00'}])}]);
+  expect(r.backup.events).toHaveLength(2);expect(r.backup.events.find(e=>e.eventId===e1.eventId)!.observationText).toBe('較新');expect(r.backup.events.some(e=>e.eventId===e3.eventId)).toBe(false);expect(r.backup.participants).toHaveLength(1);expect(r.note).toContain('略過同裝置較舊的 1 份');expect(r.label).toContain('A新.json');expect(r.label).not.toContain('A舊.json');});
+ it('單一檔案維持原本的來源標示',()=>{const r=combineBackups([{name:'x.json',backup:mk('devX','2026-12-13T09:00:00+08:00',[event()])}]);expect(r.label).toBe('x.json（來源裝置 devX）');expect(r.note).toBe('');});
+});
+describe('備份頁合併',()=>{
+ const q=<T extends HTMLElement=HTMLElement>(s:string)=>document.querySelector<T>(s)!;
+ const until=async(fn:()=>void)=>vi.waitFor(fn,{timeout:10000});
+ let routes:Route[]=[],requests:any[]=[],reply:(body:any)=>Response;
+ beforeEach(async()=>{requests=[];localStorage.clear();Object.defineProperty(globalThis,'indexedDB',{value:new IDBFactory(),configurable:true});Object.defineProperty(navigator,'onLine',{get:()=>true,configurable:true});vi.spyOn(window,'scrollTo').mockImplementation(()=>{});
+  vi.spyOn(globalThis,'fetch').mockImplementation(async(u,init)=>{if(String(u)==='https://script.test/exec'){const body=JSON.parse(String(init!.body));requests.push(body);return reply(body);}return new Response('',{status:404});});
+  const db=await openDB(),r=await parseGPX(readFileSync('public/route.gpx','utf8'),'15期素養體能評測.GPX');await putMany(db,'routes',[r]);await putMany(db,'instructors',[{instructorId:'lead',displayName:'虛構主課',isCustom:true}]);await putMany(db,'participants',[{participantId:'TEST001',displayName:'虛構甲',active:true}]);await putMany(db,'settings',[{key:'main',deviceId:'lead-device',assessmentId:'guide15-2026-12-13',instructorId:'lead',routeVersion:r.sha256} as any]);routes=await all<Route>(db,'routes');db.close();
+  vi.resetModules();document.body.innerHTML='<div id="app"></div>';await import('../src/main');await until(()=>expect(q('[data-nav=backup]')).toBeTruthy());q('[data-nav=backup]').click();await until(()=>expect(q('#backupFile')).toBeTruthy());});
+ afterEach(async()=>{await new Promise(r=>setTimeout(r,200));vi.restoreAllMocks();});
+ it('一次選多個 JSON 檔合併預覽並寫入',async()=>{const a=mk('devA','2026-12-13T12:00:00+08:00',[event(),event()],routes),b=mk('devB','2026-12-13T12:00:00+08:00',[event()],routes);const el=q<HTMLInputElement>('#backupFile');Object.defineProperty(el,'files',{value:[{name:'A.json',text:async()=>JSON.stringify(a)},{name:'B.json',text:async()=>JSON.stringify(b)}],configurable:true});el.dispatchEvent(new Event('change',{bubbles:true}));
+  await until(()=>expect(q('#commitImport')).toBeTruthy());expect(q('#importPreview').textContent).toContain('新增 3');expect(q('#importPreview').textContent).toContain('2 台裝置');q('#commitImport').click();await until(()=>expect(q('#toast').textContent).toContain('匯入完成'));const db=await openDB();expect(await all(db,'events')).toHaveLength(3);db.close();});
+ it('主課密碼一鍵讀取雲端備份；錯誤密碼顯示錯誤不寫入',async()=>{const a=mk('devA','2026-12-13T12:00:00+08:00',[event()],routes),b=mk('devB','2026-12-13T12:00:00+08:00',[event(),event()],routes);const token=await leadTokenFor('主課-測試-密碼');
+  reply=body=>new Response(JSON.stringify(body.token===token?{ok:true,total:5,files:[{name:'備份_甲_devA.json',content:JSON.stringify(a)},{name:'備份_乙_devB.json',content:JSON.stringify(b)}]}:{ok:false,error:'auth'}));
+  q<HTMLInputElement>('#leadPassword').value='wrong';q('#cloudImport').dispatchEvent(new Event('submit',{cancelable:true,bubbles:true}));await until(()=>expect(q('#importPreview').textContent).toContain('主課密碼錯誤'));expect(requests[0].action).toBe('list');
+  q<HTMLInputElement>('#leadPassword').value='主課-測試-密碼';q('#cloudImport').dispatchEvent(new Event('submit',{cancelable:true,bubbles:true}));await until(()=>expect(q('#commitImport')).toBeTruthy());expect(q<HTMLInputElement>('#leadPassword').value).toBe('');expect(q('#importPreview').textContent).toContain('雲端資料夾共 5 份');expect(q('#importPreview').textContent).toContain('新增 3');
+  q('#commitImport').click();await until(()=>expect(q('#toast').textContent).toContain('匯入完成'));const db=await openDB();expect(await all(db,'events')).toHaveLength(3);const h=await all<{source:string}>(db,'history');db.close();expect(h.some(x=>x.source.startsWith('雲端：合併 2 份'))).toBe(true);});
+});

@@ -9,6 +9,10 @@ export async function uploadTokenFor(password: string) {
   const d = await crypto.subtle.digest('SHA-256', new TextEncoder().encode('guide15-upload:' + password));
   return [...new Uint8Array(d)].map(b => b.toString(16).padStart(2, '0')).join('');
 }
+export async function leadTokenFor(password: string) {
+  const d = await crypto.subtle.digest('SHA-256', new TextEncoder().encode('guide15-lead:' + password));
+  return [...new Uint8Array(d)].map(b => b.toString(16).padStart(2, '0')).join('');
+}
 export const uploadState = {
   token: () => get(TOKEN_KEY), setToken: (t: string | null) => set(TOKEN_KEY, t),
   pending: () => get(PENDING_KEY) === '1', setPending: (p: boolean) => set(PENDING_KEY, p ? '1' : null),
@@ -28,4 +32,15 @@ export async function uploadBackup(url: string, token: string, backup: Backup, i
   if (out.error === 'auth') throw new UploadError('auth', '上傳通行碼錯誤或已更換，請重新輸入名單密碼');
   if (out.error === 'invalid' || out.error === 'too_large') throw new UploadError('invalid', '雲端拒絕此備份檔（格式或大小不符）');
   throw new UploadError('server', '雲端暫時無法儲存，稍後會自動重試');
+}
+// 主課一鍵合併：以主課通行碼向 Apps Script 取回「教官備份上傳」資料夾的備份（每台裝置最新一份）。
+export async function fetchCloudBackups(url: string, leadToken: string): Promise<{ total: number; files: { name: string; content: string }[] }> {
+  let res: Response;
+  try { res = await fetch(url, { method: 'POST', body: JSON.stringify({ action: 'list', token: leadToken }), redirect: 'follow' }); }
+  catch { throw new UploadError('network', '無法連到雲端，請確認網路後再試'); }
+  let out: { ok?: boolean; total?: number; files?: { name: string; content: string }[]; error?: string };
+  try { out = await res.json(); } catch { throw new UploadError('server', `雲端回應異常（HTTP ${res.status}）`); }
+  if (out.ok && Array.isArray(out.files)) return { total: out.total ?? out.files.length, files: out.files };
+  if (out.error === 'auth') throw new UploadError('auth', '主課密碼錯誤');
+  throw new UploadError('server', '雲端暫時無法讀取備份，請稍後再試');
 }

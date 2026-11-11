@@ -32,6 +32,7 @@
 10. 已移除「安裝與開發交付檔案（連網下載）」區塊；`scripts/package-delivery.py` 已不需要。
 11. **備份頁以完整 JSON 為主**（V1.2.1）：事件 CSV 與匿名討論版收在摺疊的「主課整理用」。
 12. **雲端備份上傳**（V1.3）：按「完整 JSON 備份（上傳雲端）」時只 POST 到 Google Apps Script（不下載，避免 iOS 跳出預覽；另有「另存到手機」按鈕）（`src/upload.ts`、`src/upload-config.ts`、`scripts/apps-script/Code.gs`），存進雲端資料夾「04_評測紀錄APP / 教官備份上傳」。離線時提醒並標記待上傳，連網後自動補傳。通行碼由名單密碼推導，只存在 localStorage。設定見 `docs/cloud-backup.md`。
+13. **主課一鍵合併**（V1.4）：主課密碼（`LEAD_TOKEN`，與名單密碼分開）向 Apps Script 取回每台裝置最新一份備份，`combineBackups`（`src/backup.ts`）合併成一次預覽後沿用原本的合併流程。檔案匯入也可一次多選。
 
 ## 程式結構
 

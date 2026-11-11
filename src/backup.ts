@@ -10,3 +10,19 @@ for(const [store,key] of [['participants','participantId'],['instructors','instr
 return b as Backup;}
 // Discussion exports intentionally omit prose, coordinates, routes, device IDs and instructor names.
 export function anonymousExport(events:EventRecord[]){const instructors=new Map<string,string>();return {schemaVersion:1,kind:'guide15-anonymous-discussion',notice:'非還原備份；文字與 GPS 已省略，以免姓名藏在自由文字中。參加者仍使用編號。',events:events.map(e=>{if(!instructors.has(e.instructorId))instructors.set(e.instructorId,`I${instructors.size+1}`);return {assessmentId:e.assessmentId,eventId:e.eventId,participantId:e.participantId,participantPending:e.participantPending,instructorCode:instructors.get(e.instructorId),category:e.category,behaviorCode:e.behaviorCode,occurredAt:e.occurredAt,deleted:!!e.deletedAt};})};}
+// 多份完整備份合併為一份再預覽：每台裝置只取最新一份（每次上傳都是完整快照），
+// 同一事件出現在多份時取 updatedAt 較新者；名單、教官、路線、歷史依 ID 去重（先出現者優先）。
+export function combineBackups(list:{name:string;backup:Backup}[]):{backup:Backup;label:string;note:string}{
+ if(!list.length)throw Error('沒有可匯入的備份');
+ const latest=new Map<string,{name:string;backup:Backup}>();
+ for(const x of list){const cur=latest.get(x.backup.deviceId);if(!cur||Date.parse(x.backup.exportedAt)>Date.parse(cur.backup.exportedAt))latest.set(x.backup.deviceId,x);}
+ const chosen=[...latest.values()].sort((a,b)=>a.name.localeCompare(b.name));
+ if(chosen.length===1&&list.length===1){const {name,backup}=chosen[0];return {backup,label:`${name}（來源裝置 ${backup.deviceId}）`,note:''};}
+ const byId=<T,>(rows:T[],key:(r:T)=>string)=>{const m=new Map<string,T>();for(const r of rows)if(!m.has(key(r)))m.set(key(r),r);return [...m.values()];};
+ const events=new Map<string,EventRecord>();
+ for(const {backup} of chosen)for(const e of backup.events){const k=`${e.assessmentId}\u0000${e.eventId}`,old=events.get(k);if(!old||e.updatedAt>old.updatedAt)events.set(k,e);}
+ const first=chosen[0].backup,skipped=list.length-chosen.length;
+ const backup:Backup={...first,deviceId:chosen.map(c=>c.backup.deviceId).join('、'),exportedAt:chosen.map(c=>c.backup.exportedAt).sort().at(-1)!,events:[...events.values()],
+  participants:byId(chosen.flatMap(c=>c.backup.participants),p=>p.participantId),instructors:byId(chosen.flatMap(c=>c.backup.instructors),i=>i.instructorId),routes:byId(chosen.flatMap(c=>c.backup.routes),r=>r.sha256),history:byId(chosen.flatMap(c=>c.backup.history),h=>h.id)};
+ return {backup,label:`合併 ${chosen.length} 份備份：${chosen.map(c=>c.name).join('、')}`,note:`共 ${list.length} 份備份，${chosen.length} 台裝置各取最新一份${skipped?`，略過同裝置較舊的 ${skipped} 份`:''}：${chosen.map(c=>c.name).join('、')}`};
+}
