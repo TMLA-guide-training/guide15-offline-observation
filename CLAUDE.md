@@ -30,6 +30,8 @@
 8. **自動更新**：App 啟動、回到前景、恢復連網、每 30 分鐘檢查新版 service worker；沒有未儲存表單／匯入預覽時自動 `SKIP_WAITING` 並重新載入，否則顯示提示，儲存後才更新。設定頁有「檢查更新」按鈕。**絕不在教官填表時強制重新載入。**
 9. 主畫面名稱「15期評測紀錄」（`public/manifest.webmanifest` 的 name/short_name 與 `index.html` 的 `apple-mobile-web-app-title`）。
 10. 已移除「安裝與開發交付檔案（連網下載）」區塊；`scripts/package-delivery.py` 已不需要。
+11. **備份頁以完整 JSON 為主**（V1.2.1）：事件 CSV 與匿名討論版收在摺疊的「主課整理用」。
+12. **雲端備份上傳**（V1.3）：按「完整 JSON 備份」時同時 POST 到 Google Apps Script（`src/upload.ts`、`src/upload-config.ts`、`scripts/apps-script/Code.gs`），存進雲端資料夾「04_評測紀錄APP / 教官備份上傳」。離線時標記待上傳，連網後自動補傳。下載到手機永遠保留。通行碼由名單密碼推導，只存在 localStorage。設定見 `docs/cloud-backup.md`。
 
 ## 程式結構
 

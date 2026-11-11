@@ -1,0 +1,40 @@
+import { describe,it,expect,beforeEach,afterEach,vi } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { IDBFactory } from 'fake-indexeddb';
+import { encryptRoster } from '../src/rosterCrypto';
+import { parseGPX } from '../src/core';
+import { openDB,putMany } from '../src/db';
+import { uploadBackup, uploadTokenFor, UploadError } from '../src/upload';
+import type { Backup } from '../src/types';
+vi.mock('../src/upload-config',()=>({UPLOAD_URL:'https://script.test/exec'}));
+const URL_='https://script.test/exec',PW='測試用-Correct-Horse-Battery-9',CSV='participant_id,name\nTEST001,虛構參加者甲\n';
+const json=(o:unknown)=>new Response(JSON.stringify(o));
+describe('雲端上傳模組',()=>{
+ afterEach(()=>vi.restoreAllMocks());
+ it('通行碼為固定 64 字 hex，且與名單密碼本身不同',async()=>{const t=await uploadTokenFor(PW);expect(t).toMatch(/^[0-9a-f]{64}$/);expect(await uploadTokenFor(PW)).toBe(t);expect(await uploadTokenFor(PW+'x')).not.toBe(t);});
+ it('依雲端回應分類錯誤',async()=>{const b={kind:'guide15-backup'} as unknown as Backup;const f=vi.spyOn(globalThis,'fetch');
+  f.mockResolvedValueOnce(json({ok:true,name:'備份_甲.json'}));expect(await uploadBackup(URL_,'t',b,'甲')).toBe('備份_甲.json');const body=JSON.parse(String(f.mock.calls[0][1]!.body));expect(body).toEqual({token:'t',instructor:'甲',backup:b});expect((f.mock.calls[0][1]!.headers)).toBeUndefined();
+  const kind=async()=>{try{await uploadBackup(URL_,'t',b,'甲');}catch(e){return (e as UploadError).kind;}};
+  f.mockResolvedValueOnce(json({ok:false,error:'auth'}));expect(await kind()).toBe('auth');
+  f.mockResolvedValueOnce(json({ok:false,error:'invalid'}));expect(await kind()).toBe('invalid');
+  f.mockResolvedValueOnce(new Response('<html>',{status:500}));expect(await kind()).toBe('server');
+  f.mockRejectedValueOnce(new TypeError('Failed to fetch'));expect(await kind()).toBe('network');});
+});
+describe('備份頁一鍵上傳雲端',()=>{
+ const q=<T extends HTMLElement=HTMLElement>(s:string)=>document.querySelector<T>(s)!;
+ const until=async(fn:()=>void)=>vi.waitFor(fn,{timeout:10000});
+ let uploads:any[]=[],reply:()=>Response,online=true;
+ beforeEach(async()=>{uploads=[];online=true;reply=()=>json({ok:true,name:'備份_虛構教官甲_test.json'});localStorage.clear();const bundle=await encryptRoster(CSV,PW,100000);Object.defineProperty(globalThis,'indexedDB',{value:new IDBFactory(),configurable:true});Object.defineProperty(navigator,'onLine',{get:()=>online,configurable:true});vi.spyOn(window,'scrollTo').mockImplementation(()=>{});URL.createObjectURL=()=>'blob:x';URL.revokeObjectURL=()=>{};vi.spyOn(HTMLAnchorElement.prototype,'click').mockImplementation(()=>{});
+  vi.spyOn(globalThis,'fetch').mockImplementation(async(u,init)=>{const s=String(u);if(s.includes('roster.enc.json'))return json(bundle);if(s===URL_){uploads.push(JSON.parse(String(init!.body)));return reply();}return new Response('',{status:404});});
+  const db=await openDB(),r=await parseGPX(readFileSync('public/route.gpx','utf8'),'15期素養體能評測.GPX');await putMany(db,'routes',[r]);db.close();
+  vi.resetModules();document.body.innerHTML='<div id="app"></div>';await import('../src/main');await until(()=>expect(q('#setupName')).toBeTruthy());q<HTMLInputElement>('#setupName').value='虛構教官甲';q('#setupNameForm').dispatchEvent(new Event('submit',{cancelable:true,bubbles:true}));await until(()=>expect(q('#rosterPassword')).toBeTruthy());q<HTMLInputElement>('#rosterPassword').value=PW;q('#rosterPwForm').dispatchEvent(new Event('submit',{cancelable:true,bubbles:true}));await until(()=>expect(q('#confirmRoster')).toBeTruthy());q('#confirmRoster').click();await until(()=>expect(q('#add')).toBeTruthy());
+  q('[data-nav=backup]').click();await until(()=>expect(q('#exportJSON')).toBeTruthy());});
+ afterEach(async()=>{localStorage.clear();await new Promise(r=>setTimeout(r,300));vi.restoreAllMocks();});
+ it('以密碼解鎖名單後自動取得通行碼；按完整 JSON 備份即下載並上傳',async()=>{await until(()=>expect(q('#cloudStatus').textContent).toContain('有網路時'));q('#exportJSON').click();await until(()=>expect(uploads).toHaveLength(1));expect(HTMLAnchorElement.prototype.click).toHaveBeenCalled();expect(uploads[0].token).toBe(await uploadTokenFor(PW));expect(uploads[0].instructor).toBe('虛構教官甲');expect(uploads[0].backup.kind).toBe('guide15-backup');expect(uploads[0].backup.participants).toHaveLength(1);await until(()=>expect(q('#cloudStatus').textContent).toContain('備份_虛構教官甲_test.json'));expect(JSON.stringify(uploads[0].backup)).not.toContain('guide15-upload');});
+ it('離線時只下載並標記待上傳，連網後自動補傳',async()=>{online=false;q('#exportJSON').click();await until(()=>expect(q('#cloudStatus').textContent).toContain('尚未上傳'));expect(uploads).toHaveLength(0);online=true;window.dispatchEvent(new Event('online'));await until(()=>expect(uploads.length).toBeGreaterThanOrEqual(1));// 前一個測試載入的模組也會監聽 online，故可能多於 1 筆
+ await until(()=>expect(q('#cloudStatus').textContent).toContain('最近一次上傳'));});
+ it('網路錯誤保留待上傳；通行碼失效則要求重新輸入密碼，錯誤密碼不啟用',async()=>{reply=()=>{throw new TypeError('Failed to fetch');};q('#exportJSON').click();await until(()=>expect(uploads).toHaveLength(1));await until(()=>expect(q('#cloudStatus').textContent).toContain('尚未上傳'));
+  reply=()=>json({ok:false,error:'auth'});window.dispatchEvent(new Event('online'));await until(()=>expect(q('#cloudPassword')).toBeTruthy());expect(q('#toast').textContent).toContain('通行碼');
+  q<HTMLInputElement>('#cloudPassword').value='wrong';q('#cloudEnable').dispatchEvent(new Event('submit',{cancelable:true,bubbles:true}));await until(()=>expect(q('#toast').textContent).toContain('密碼錯誤'));expect(q('#cloudPassword')).toBeTruthy();
+  q<HTMLInputElement>('#cloudPassword').value=PW;q('#cloudEnable').dispatchEvent(new Event('submit',{cancelable:true,bubbles:true}));await until(()=>expect(q('#cloudPassword')).toBeNull());reply=()=>json({ok:true,name:'ok.json'});q('#exportJSON').click();await until(()=>expect(uploads.length).toBeGreaterThanOrEqual(3));});
+});
