@@ -20,6 +20,7 @@
 ## 已確定的設計決定（修改前請先確認使用者同意）
 
 1. **名單絕不 commit 進 repo**：repo 與網站都是公開的。正式參加者名單由主課私下（LINE）傳給教官，在 App 內匯入。`examples/` 只放虛構資料。
+   - **內建加密名單（V1.2 起，使用者同意）**：名單以密碼加密（AES-256-GCM、PBKDF2-SHA256 600000 次，`src/rosterCrypto.ts`），加密後的 JSON 存在 GitHub Secret `ROSTER_ENC`，build 時由 `scripts/write-roster.mjs` 寫成 `dist/roster.enc.json`。repo 與 git 歷史都沒有名單。教官在首次設定輸入主課給的密碼即可載入；檔案匯入仍保留。加密檔在網站上是公開的，密碼須 16 字以上隨機。操作步驟見 `docs/roster-secret.md`。評測結束後刪除 Secret 並重新部署。
 2. **首次開啟強制設定**：必須先輸入教官姓名、匯入參加者名單才能使用（`needsSetup()`／`renderSetup()`）；完成後不再要求。
 3. **教官自行輸入姓名**，不建教官名單。改名只更新同一個 instructorId 的 displayName，已存事件保留姓名快照。
 4. **名單格式**：CSV 第一列 `participant_id,name`（也接受 `編號,姓名`），UTF-8／BOM 或 Big5 皆可（`decodeText`、`parseRoster` in `src/core.ts`）；或 JSON 陣列。

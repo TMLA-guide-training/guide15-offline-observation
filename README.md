@@ -23,7 +23,7 @@ npm run preview
 
 推送到 `main` 分支後，`.github/workflows/deploy.yml` 會在 GitHub 雲端自動執行 `npm ci`、`npm test`、`npm run build`，測試通過才部署 `dist/`；本機不需安裝 Node。首次使用需到 repo 的 Settings → Pages → Source 選「GitHub Actions」。
 
-注意：repo 為公開時，**切勿 commit 真實教官或參加者名單**；正式名單請私下傳給教官，在 App 內匯入。GitHub Pages 無法自訂快取標頭，新版發佈後教官端最多約 10 分鐘才取得新的 index.html。不要更改 repo 名稱或網址，換網址等於換一份本機資料。
+注意：repo 為公開時，**切勿 commit 真實教官或參加者名單**；正式名單請私下傳給教官，在 App 內匯入；或以密碼加密後放在 GitHub Secret，見 `docs/roster-secret.md`。GitHub Pages 無法自訂快取標頭，新版發佈後教官端最多約 10 分鐘才取得新的 index.html。不要更改 repo 名稱或網址，換網址等於換一份本機資料。
 
 ## HTTPS 部署
 

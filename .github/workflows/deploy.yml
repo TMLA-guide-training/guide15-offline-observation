@@ -26,6 +26,9 @@ jobs:
       - run: npm ci
       - run: npm test
       - run: npm run build
+        env:
+          # 加密後的參加者名單（scripts/encrypt-roster.mjs 產生）；未設定則不含內建名單
+          ROSTER_ENC: ${{ secrets.ROSTER_ENC }}
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v4
         with:

@@ -1,0 +1,33 @@
+import { describe,it,expect,beforeEach,afterEach,vi } from 'vitest';
+import { execFileSync } from 'node:child_process';
+import { mkdtempSync, writeFileSync, readFileSync, rmSync, existsSync, mkdirSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { IDBFactory } from 'fake-indexeddb';
+import { encryptRoster, decryptRoster, isEncryptedRoster } from '../src/rosterCrypto';
+import { parseGPX } from '../src/core';
+import { openDB,putMany,all } from '../src/db';
+const CSV='participant_id,name\nTEST001,虛構參加者甲\nTEST002,虛構參加者乙\n';
+const PW='測試用-Correct-Horse-Battery-9';
+describe('內建加密名單',()=>{
+ it('加密後可用正確密碼解回原文，錯誤密碼拒絕；每次加密的 salt/iv 不同',async()=>{const a=await encryptRoster(CSV,PW,100000),b=await encryptRoster(CSV,PW,100000);expect(isEncryptedRoster(a)).toBe(true);expect(a.ciphertext).not.toContain('虛構');expect(a.salt).not.toBe(b.salt);expect(a.iv).not.toBe(b.iv);expect(await decryptRoster(a,PW)).toBe(CSV);await expect(decryptRoster(a,PW+'x')).rejects.toThrow('密碼錯誤');await expect(decryptRoster({...a,ciphertext:'AAAA'+a.ciphertext.slice(4)},PW)).rejects.toThrow('密碼錯誤');await expect(decryptRoster({format:'x'},PW)).rejects.toThrow('格式不正確');await expect(decryptRoster(a,'')).rejects.toThrow('請輸入');});
+ it('拒絕迭代次數過低或欄位不合法的加密檔',async()=>{const a=await encryptRoster(CSV,PW,100000);expect(isEncryptedRoster({...a,iterations:1000})).toBe(false);expect(isEncryptedRoster({...a,salt:'<script>'})).toBe(false);expect(isEncryptedRoster(null)).toBe(false);});
+ it('encrypt-roster.mjs 的輸出可被 App 解密；write-roster.mjs 寫入 dist 並拒絕錯誤內容',async()=>{const dir=mkdtempSync(join(tmpdir(),'roster-'));try{const csvPath=join(dir,'名單.csv');writeFileSync(csvPath,'﻿'+CSV);const out=execFileSync(process.execPath,['scripts/encrypt-roster.mjs',csvPath],{env:{...process.env,ROSTER_PASSWORD:PW},encoding:'utf8',stdio:['ignore','pipe','pipe']});const bundle=JSON.parse(out);expect(bundle.iterations).toBe(600000);expect(await decryptRoster(bundle,PW)).toBe(CSV);
+  writeFileSync(join(dir,'bad.csv'),'name\nx');expect(()=>execFileSync(process.execPath,['scripts/encrypt-roster.mjs',join(dir,'bad.csv')],{env:{...process.env,ROSTER_PASSWORD:PW},stdio:'pipe'})).toThrow();
+  const cwd=join(dir,'proj');mkdirSync(join(cwd,'dist'),{recursive:true});const script=join(process.cwd(),'scripts/write-roster.mjs');
+  execFileSync(process.execPath,[script],{cwd,env:{...process.env,ROSTER_ENC:''},stdio:'pipe'});expect(existsSync(join(cwd,'dist/roster.enc.json'))).toBe(false);
+  execFileSync(process.execPath,[script],{cwd,env:{...process.env,ROSTER_ENC:out},stdio:'pipe'});expect(JSON.parse(readFileSync(join(cwd,'dist/roster.enc.json'),'utf8'))).toEqual(bundle);
+  expect(()=>execFileSync(process.execPath,[script],{cwd,env:{...process.env,ROSTER_ENC:'{"a":1}'},stdio:'pipe'})).toThrow();}finally{rmSync(dir,{recursive:true,force:true});}},60000);
+});
+describe('首次設定以密碼載入內建名單',()=>{
+ const q=<T extends HTMLElement=HTMLElement>(s:string)=>document.querySelector<T>(s)!;
+ const until=async(fn:()=>void)=>vi.waitFor(fn,{timeout:10000});
+ let bundle:unknown;
+ beforeEach(async()=>{bundle=await encryptRoster(CSV,PW,100000);Object.defineProperty(globalThis,'indexedDB',{value:new IDBFactory(),configurable:true});vi.spyOn(window,'scrollTo').mockImplementation(()=>{});vi.spyOn(globalThis,'fetch').mockImplementation(async u=>String(u).includes('roster.enc.json')?new Response(JSON.stringify(bundle)):new Response('',{status:404}));const db=await openDB(),r=await parseGPX(readFileSync('public/route.gpx','utf8'),'15期素養體能評測.GPX');await putMany(db,'routes',[r]);db.close();});
+ afterEach(()=>vi.restoreAllMocks());
+ it('密碼錯誤不寫入；正確密碼預覽後確認匯入，進入主畫面',async()=>{vi.resetModules();document.body.innerHTML='<div id="app"></div>';await import('../src/main');await until(()=>expect(q('#setupName')).toBeTruthy());q<HTMLInputElement>('#setupName').value='虛構教官甲';q('#setupNameForm').dispatchEvent(new Event('submit',{cancelable:true,bubbles:true}));await until(()=>expect(q('#rosterPassword')).toBeTruthy());expect(q('#rosterFile')).toBeTruthy();
+  q<HTMLInputElement>('#rosterPassword').value='wrong';q('#rosterPwForm').dispatchEvent(new Event('submit',{cancelable:true,bubbles:true}));await until(()=>expect(q('#rosterPreview').textContent).toContain('密碼錯誤'));expect(q('#confirmRoster')).toBeNull();
+  q<HTMLInputElement>('#rosterPassword').value=PW;q('#rosterPwForm').dispatchEvent(new Event('submit',{cancelable:true,bubbles:true}));await until(()=>expect(q<HTMLButtonElement>('#confirmRoster').disabled).toBe(false));expect(q<HTMLInputElement>('#rosterPassword').value).toBe('');expect(q('#rosterPreview').textContent).toContain('TEST002 · 虛構參加者乙');q('#confirmRoster').click();await until(()=>expect(q('#add')).toBeTruthy());
+  const db=await openDB();const ps=await all<{participantId:string}>(db,'participants');const h=await all<{source:string}>(db,'history');db.close();expect(ps.map(p=>p.participantId).sort()).toEqual(['TEST001','TEST002']);expect(h.some(x=>x.source==='內建加密名單')).toBe(true);});
+ it('沒有內建名單時不顯示密碼欄，仍可用檔案匯入',async()=>{vi.mocked(fetch).mockImplementation(async()=>new Response('',{status:404}));vi.resetModules();document.body.innerHTML='<div id="app"></div>';await import('../src/main');await until(()=>expect(q('#setupName')).toBeTruthy());q<HTMLInputElement>('#setupName').value='虛構教官甲';q('#setupNameForm').dispatchEvent(new Event('submit',{cancelable:true,bubbles:true}));await until(()=>expect(q('#rosterFile')).toBeTruthy());await new Promise(r=>setTimeout(r,50));expect(q('#rosterPassword')).toBeNull();});
+});
